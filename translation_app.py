@@ -38,7 +38,8 @@ LANGUAGE_NAMES = {
 
 st.set_page_config(page_title="Multilingual Translator", page_icon="🌐", layout="wide")
 
-model_name = "facebook/nllb-200-distilled-150M"
+# The correct smallest distilled NLLB model is 600M
+model_name = "facebook/nllb-200-distilled-600M"
 
 @st.cache_resource
 def load_model():
