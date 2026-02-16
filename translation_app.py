@@ -38,20 +38,19 @@ LANGUAGE_NAMES = {
 
 st.set_page_config(page_title="Multilingual Translator", page_icon="🌐", layout="wide")
 
-# The correct smallest distilled NLLB model is 600M
-model_name = "facebook/nllb-200-distilled-600M"
+# This model is small (~300MB) and very reliable on free tiers
+model_name = "Helsinki-NLP/opus-mt-mul-en"
 
 @st.cache_resource
 def load_model():
     try:
-        # Try both uppercase and lowercase to match whatever you typed in Streamlit
+        # Check for both 'token' and 'TOKEN'
         hf_token = st.secrets.get("TOKEN") or st.secrets.get("token")
         
         tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
+        # Loading in standard FP32 for better CPU compatibility on Streamlit
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_name, 
-            dtype=torch.float16,  # 'torch_dtype' is deprecated in newer versions
-            low_cpu_mem_usage=True,
             token=hf_token
         )
         return model, tokenizer
@@ -66,16 +65,9 @@ if model is None or tokenizer is None:
 
 def translate(text, src_lang_code):
     try:
-        # Convert 2-letter code to NLLB code
-        nllb_src = NLLB_LANGUAGE_DICT.get(src_lang_code, 'eng_Latn')
-        
-        inputs = tokenizer(text, return_tensors="pt")
-        # NLLB uses 'eng_Latn' for English target
-        generated_tokens = model.generate(
-            **inputs, 
-            forced_bos_token_id=tokenizer.lang_code_to_id["eng_Latn"],
-            max_length=512
-        )
+        inputs = tokenizer(text, return_tensors="pt", padding=True)
+        # Standard generation params for Opus-MT
+        generated_tokens = model.generate(**inputs, max_length=512)
         return tokenizer.decode(generated_tokens[0], skip_special_tokens=True)
     except Exception as e:
         st.error(f"Translation error: {str(e)}")
@@ -85,10 +77,9 @@ def detect_language(text: str) -> Optional[str]:
     try:
         return detect(text)
     except:
-        st.error("Unable to detect the language.")
         return None
 
-st.success("Welcome to the AI Machine Translation")
+st.success("Welcome to the Multilingual Translation App")
 st.title("🌍 Multilingual to English Translator 🌎")
 
 input_text = st.text_area("Enter text to translate:", height=150)
@@ -128,17 +119,18 @@ if st.button("Translate"):
 
 st.markdown("---")
 st.markdown("## 🚀 Features")
-st.markdown("- Powered by Meta's NLLB-200 (No Language Left Behind)")
-st.markdown("- Supports 200+ languages with high accuracy")
+st.markdown("- Powered by Helsinki-NLP Opus-MT")
+st.markdown("- Fast translation (optimized for web)")
+st.markdown("- Supports multiple languages to English translation")
 
 st.markdown("## 📊 Translation Statistics")
 col3, col4, col5 = st.columns(3)
 with col3:
-    st.metric(label="Average Translation Time", value="~2 seconds")
+    st.metric(label="Status", value="Ready")
 with col4:
-    st.metric(label="Supported Languages", value="200+")
+    st.metric(label="Supported Languages", value="100+")
 with col5:
-    st.metric(label="Model", value="NLLB-200 (Distilled)")
+    st.metric(label="Model Size", value="~300MB")
 
 st.markdown("---")
 st.markdown("Built with ❤️ using Streamlit and Hugging Face Transformers")
