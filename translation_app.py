@@ -43,13 +43,13 @@ model_name = "facebook/nllb-200-distilled-600M"
 @st.cache_resource
 def load_model():
     try:
-        # Get token from Streamlit secrets if available
-        hf_token = st.secrets.get("TOKEN", None)
+        # Try both uppercase and lowercase to match whatever you typed in Streamlit
+        hf_token = st.secrets.get("TOKEN") or st.secrets.get("token")
         
         tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_name, 
-            torch_dtype=torch.float16,
+            dtype=torch.float16,  # 'torch_dtype' is deprecated in newer versions
             low_cpu_mem_usage=True,
             token=hf_token
         )
