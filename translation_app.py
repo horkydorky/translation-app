@@ -90,18 +90,28 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 target_lang = 'en'
+
+# Language selection
+language_options = ["Auto Detect"] + list(LANGUAGE_DICT.values())
+selected_language_name = st.selectbox("Select Source Language", language_options)
+
 if st.button("Translate"):
     if input_text:
-        detected_lang = detect_language(input_text)
-        if detected_lang == target_lang:
-            st.info("The text is already in English: ")
-            translated_text = input_text
-
+        if selected_language_name == "Auto Detect":
+            detected_lang = detect_language(input_text)
+            if detected_lang == target_lang:
+                st.info("The text is already in English: ")
+                translated_text = input_text
+            else:
+                st.info(f"Detected language: {LANGUAGE_DICT.get(detected_lang, detected_lang)}")
+                with st.spinner("Translating..."):
+                    translated_text = translate(input_text, detected_lang)
         else:
-            st.info(f"Detected language: {LANGUAGE_DICT[detected_lang]}")
-
-        with st.spinner("Translating..."):
-            translated_text = translate(input_text, detected_lang)
+            # Find the key for the selected language
+            src_lang = [k for k, v in LANGUAGE_DICT.items() if v == selected_language_name][0]
+            st.info(f"Selected language: {selected_language_name}")
+            with st.spinner("Translating..."):
+                translated_text = translate(input_text, src_lang)
 
         # Display translation with a green border
         if translated_text:
